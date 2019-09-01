@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Noto+Sans+KR:900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{url_for('static', filename='style1.css')}}"
+    />
+    <!--Jquery-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <title>waYou</title>
+  </head>
+
+  <body>
+    <h1 class="wayou">와유</h1>
+
+    <div class="container">
+      <div class="buttonShow" id="buttonShow_id" onclick="changeImage()">
+        🕳
+      </div>
+
+      <div class="whiteBox">
+        <div id="imgWrap_id"></div>
+        <textarea
+          class="dansang"
+          id="dansang_id"
+          placeholder="그대의 짧은 단상..."
+          maxlength="50"
+          type="text"
+          name="dansang"
+        ></textarea>
+
+        <div
+          class="buttonSave"
+          id="buttonSave_id"
+          onclick="postComment()"
+          onMouseOver="this.innerHTML='📸'"
+          onMouseOut="this.innerHTML='📷'"
+        >
+          📷
+        </div>
+      </div>
+    </div>
+    <!--container class end-->
+
+    <div class="textContainer" id="textContainer_id">
+      <div class="spaceBox"><br /><br /><br /><br /><br /></div>
+    </div>
+    <!--textContainer class end-->
+  </body>
+
+  <script>
+    let url = null;
+    // 기본세팅
+    $("#buttonSave_id").hide();
+    // $("#img_id").hide();
+    $("#dansang_id").hide();
+    //* buttonHide()함수만으로는 reload 시, button이 자동으로 다시 나타나서 위의 코드 추가
+
+    // 페이지 로드 시 자동으로 실행 - comment get하는 함수 &
+    window.onload = function() {
+      getComment();
+      getImgLink();
+    };
+
+    // 쌓인 코멘트들 불러오기 (reload시 자동으로 실행되는 함수)
+    function getComment() {
+      $.ajax({
+        type: "GET",
+        url: "/post",
+        data: {},
+        success: function(response) {
+          let textBoxes = response["comments"];
+          for (let i = textBoxes.length - 1; i > -1; i--) {
+            let comment = textBoxes[i]["comment"];
+            makeTextBox(comment);
+          }
+        }
+      });
+    }
+
+    // 페이지 로드되면 자동으로 크롤링을 시작해서 이미지 링크를 받아놓는다
+    function getImgLink() {
+      $.ajax({
+        type: "GET",
+        url: "/img",
+        data: [],
+        success: function(imgSrc) {
+          url = imgSrc;
+          console.log(url);
+        }
+      });
+    }
+
+    // div 추가 버전
+    function changeImage() {
+      if ($("#img_id").css("display") == "block") {
+        $("#buttonShow_id").text("?");
+      } else {
+        console.log(url);
+        if (url == null) {
+          alert("좀 더 기다리시오 😎");
+        } else {
+          let imgBox =
+            '<div class="img" id="img_id"\
+            style="background-image: url(' +
+            url +
+            ')">\
+        </div>';
+          $("#imgWrap_id").append(imgBox);
+          $("#dansang_id").show();
+          $("#img_id").show();
+        }
+      }
+    }
+
+    // textarea에 글자 입력 시작 시 자동으로 버튼이 나타남
+    //* 아래 코드 정상적으로 작동!!!
+    $(document).keyup(".code_textarea", function() {
+      let content = $.trim($("#dansang_id").val());
+      if (content.length === 0) {
+        $("#buttonSave_id").hide();
+      } else {
+        $("#buttonSave_id").show();
+      }
+    });
+
+    // comment post하기
+    function postComment() {
+      let comment = $("#dansang_id").val();
+
+      $.ajax({
+        type: "POST",
+        url: "/post",
+        data: {
+          comment_give: comment
+        },
+        success: function(response) {
+          if (response["result"] == "success") {
+            alert("찰칵");
+            window.location.reload();
+          } else {
+            alert("왜지... 저장 오류...");
+          }
+        },
+        error: function(errorAlert) {
+          alert("왜지... 저장 오류...");
+        }
+      });
+    }
+
+    // 우측에 comment들 쌓이게끔
+    function makeTextBox(comment) {
+      let oneTextBox =
+        '<div class="textBox">\
+             ' + comment + " </div>";
+      $("#textContainer_id").append(oneTextBox);
+    }
+  </script>
+</html>
